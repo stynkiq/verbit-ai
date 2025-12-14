@@ -13,6 +13,7 @@ function addMessage(role, text) {
 async function sendMessage() {
   const query = input.value.trim();
   if (!query) return;
+
   addMessage('user', query);
   input.value = '';
 
@@ -29,16 +30,32 @@ async function sendMessage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: query })
     });
+
+    // Check if the response is ok (status 200-299)
+    if (!res.ok) {
+      throw new Error(`Backend returned status ${res.status}`);
+    }
+
     const data = await res.json();
     typing.remove();
-    addMessage('assistant', data.reply || '(no reply)');
+    
+    // Ensure data.reply exists and is a string
+    const reply = typeof data.reply === 'string' ? data.reply : '(no reply)';
+    addMessage('assistant', reply);
   } catch (err) {
+    console.error('Error sending message:', err); // Logs error for debugging
     typing.remove();
-    addMessage('assistant', 'Error contacting the AI backend.');
+    addMessage('assistant', 'Error contacting the AI backend. Please try again.');
   }
 }
 
+// Send message on button click
 sendBtn.addEventListener('click', sendMessage);
+
+// Send message on Enter key press
 input.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Prevent form submission if inside a form
+    sendMessage();
+  }
 });
