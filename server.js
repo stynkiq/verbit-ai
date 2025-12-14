@@ -1,21 +1,20 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-// Make sure your OpenAI API key is set in environment variables (e.g., in a .env file)
+// For Node <18, uncomment the next line and install node-fetch
+// const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
-// Serve static files from the 'public' directory (where your frontend/index.html should be)
 app.use(express.static("public"));
 
 // Chat endpoint
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
-
-  // 1. Check that the API key exists
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
   if (!OPENAI_API_KEY) {
     console.error("Error: OPENAI_API_KEY is not set.");
     return res.status(500).json({ reply: "Server configuration error. API key is missing." });
@@ -26,20 +25,15 @@ app.post("/chat", async (req, res) => {
   }
 
   try {
-    // 2. Correct API URL: Use the Chat Completions endpoint
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        // 3. Correct Authorization
         "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
-      // 4. Correct body structure: Use 'messages'
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [
-          { role: "user", content: userMessage }
-        ]
+        messages: [{ role: "user", content: userMessage }]
       })
     });
 
@@ -50,8 +44,6 @@ app.post("/chat", async (req, res) => {
     }
 
     const data = await response.json();
-
-    // 5. Correct response structure
     const reply = data.choices[0].message.content;
 
     res.json({ reply });
@@ -61,7 +53,6 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
